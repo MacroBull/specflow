@@ -1,0 +1,56 @@
+{
+  "name": "tdd-demo",
+  "initial": "red",
+  "stages": {
+    "red": {
+      "objective": "Prove the regression with a failing test.",
+      "instructions": [
+        "Inspect the failing test and preserve the red state. Do not fix production code yet."
+      ],
+      "tools": ["read", "write", "shell"],
+      "shell_prefixes": ["python -m unittest"],
+      "tool_schemas": {
+        "shell": {
+          "type": "object",
+          "properties": {"command": {"type": "string"}},
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      },
+      "verify": "python verify.py red",
+      "next": "green"
+    },
+    "green": {
+      "objective": "Make the regression test pass with the smallest correct change.",
+      "instructions": ["Modify production code, then run the focused test."],
+      "tools": ["read", "write", "shell"],
+      "shell_prefixes": ["python -m unittest"],
+      "tool_schemas": {
+        "shell": {
+          "type": "object",
+          "properties": {"command": {"type": "string"}},
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      },
+      "verify": "python verify.py green",
+      "next": "review"
+    },
+    "review": {
+      "objective": "Review the diff and verify the full test suite.",
+      "instructions": ["Do not modify files unless the flow is changed by a human."],
+      "tools": ["read", "shell"],
+      "shell_prefixes": ["python -m unittest", "git diff"],
+      "tool_schemas": {
+        "shell": {
+          "type": "object",
+          "properties": {"command": {"type": "string"}},
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      },
+      "verify": "python verify.py review",
+      "next": "completed"
+    }
+  }
+}
