@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specflow"
+version = "0.1.0"
+description = "Tool-gated spec & flow"
+requires-python = ">=3.10"
+readme = "README.md"
+
+[project.scripts]
+specflow-hook = "specflow.hooks:main"
+specflow-mcp = "specflow.mcp:main"
+
+[tool.setuptools.packages.find]
+include = ["specflow*"]
