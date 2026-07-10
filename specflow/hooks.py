@@ -6,6 +6,8 @@ import sys
 
 from .engine import (
     GateError,
+    ROOT,
+    STATE,
     approve,
     begin_replan,
     bootstrap,
@@ -60,13 +62,13 @@ def _submit(text: str) -> None:
             _reply(json.dumps(view()))
             return
 
-        flow = os.environ.get("SPECFLOW_FLOW", f".specflow/tools/{name}.json")
-        if not os.path.exists(".specflow/state.json"):
+        flow = os.environ.get("SPECFLOW_FLOW", str(ROOT / "tools" / f"{name}.json"))
+        if not STATE.exists():
             bootstrap(flow)
         _reply(prompt())
         return
 
-    if os.path.exists(".specflow/state.json"):
+    if STATE.exists():
         record_human_message(text)
         _reply(prompt())
     else:
