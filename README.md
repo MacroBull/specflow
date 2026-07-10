@@ -4,32 +4,57 @@
 
 Specflow is a hook-first harness, not a user-facing CLI.
 
-- **tool-in-control**: hooks and verifiers own transitions and permissions;
-- **model-in-loop**: the model solves only the current approved stage;
-- **human-on-change**: humans approve the initial spec and any later workflow change;
-- normal verified stages advance automatically;
-- models can raise `specflow.request_change` instead of bypassing the flow.
+- **tool-in-control**: hooks, typed MCP tools and verifiers own permissions and transitions;
+- **model-in-loop**: the model plans or solves only the current mode/stage;
+- **human-on-change**: humans approve generated specs and any later workflow revision;
+- approved stages advance automatically when their frozen verifier passes;
+- models can request a change but cannot approve one.
 
 ```text
-UserPromptSubmit "%tdd ..."
-  → tool router selects the flow
-  → hook injects only current-stage instructions
-  → optional subagent runs the UserPromptSubmit–Stop loop
-  → PreToolUse enforces stage capabilities
-  → Stop runs the verifier
+UserPromptSubmit "%plan ..."
+  → hook enters planning before the model
+  → MCP exposes planning state + propose_flow schema
+  → human and model discuss spec/verifier coverage
+  → model submits structured spec + flow + verifier files
+  → human %approve freezes the proposal
+  → optional subagent runs UserPromptSubmit–Stop loops
+  → PreToolUse enforces current-stage capabilities
+  → Stop runs the frozen verifier
       pass → next stage automatically
-      fail → current stage continues
-      change needed → model calls MCP request_change → human decision
+      fail → continue current stage
+      change needed → MCP request_change → human revises/re-approves
 ```
 
-## Why MCP
+## Model-visible MCP surface
 
-The model is not taught the complete state machine in a prompt. The MCP server exposes only:
+The model is not taught the complete state machine through a long prompt. `tools/list` changes with authoritative state:
 
-- `specflow.current_stage`: current objective, instructions, tools and JSON schemas;
-- `specflow.request_change`: pause and request a human-approved workflow revision.
+### Planning
 
-Stage-specific schemas support structured decoding and reduce invalid tool retries. Different routed tools can select different instructions, subagents, hooks and harness policies.
+- `specflow.current_stage`
+- `specflow.propose_flow`
+
+`propose_flow` uses a strict schema for:
+
+- Markdown spec;
+- staged flow;
+- stage-specific capabilities;
+- executable verifier files.
+
+### Running
+
+- `specflow.current_stage`
+- `specflow.request_change`
+
+Approval and amendment are intentionally absent from MCP. They are human host actions received through `UserPromptSubmit`:
+
+```text
+%plan <goal>       start a plan discussion
+%approve [note]    freeze the current proposal and enter/resume the flow
+%reject <feedback> reject the current proposal but remain in planning
+%revise <feedback> reopen planning after a model escalation
+%status            inspect authoritative state
+```
 
 ## Install
 
@@ -40,7 +65,7 @@ pip install -e .
 Runtime entry points used by agent configuration:
 
 ```text
-specflow-hook   # lifecycle-hook adapter, reads JSON on stdin
+specflow-hook   # lifecycle-hook adapter; reads hook JSON on stdin
 specflow-mcp    # stdio MCP server
 ```
 
@@ -56,18 +81,25 @@ PreToolUse       → SPECFLOW_EVENT=PreToolUse specflow-hook
 Stop             → SPECFLOW_EVENT=Stop specflow-hook
 ```
 
-A prompt beginning with `%tdd` selects `.specflow/tools/tdd.json` by default. `SPECFLOW_FLOW` can override routing. The hook may be configured on a subagent so its entire submit-to-stop loop is governed without polluting the parent agent context.
+For planning, set `SPECFLOW_PLAN` to a planner policy JSON. The default is `.specflow/tools/plan.json`.
 
-## Demo
+The full submit-to-stop loop may run inside a routed subagent. `current_stage` carries only the current goal, latest human feedback, instructions, tools and schemas, avoiding the parent transcript and full workflow in each model turn.
 
-`examples/tdd-demo/flow.json` contains three automatically advancing stages:
+## Plan-first demo
+
+[`examples/plan-demo`](examples/plan-demo) demonstrates:
 
 ```text
-red → green → review → completed
+human goal
+  → plan discussion
+  → structured proposal
+  → human approval
+  → frozen verifier
+  → red → green → review → completed
 ```
 
-The initial spec must be approved by the host/human control surface. During execution, the model reads its current contract through MCP, uses only exposed stage tools, and calls `request_change` when the approved flow is insufficient.
+The example includes a planner policy, buggy code, an example `propose_flow` payload and a full conversation walkthrough.
 
 ## Security boundary
 
-Workflow approval and amendment are host operations, intentionally absent from model-visible MCP tools. The model can request a change, but cannot approve or install one.
+Approved verifier files are content-addressed under `.specflow/verifiers/<digest>/`. The model cannot write control files through the governed `write` tool. Production deployments should additionally protect `.specflow` at the sandbox/filesystem layer so alternate tools cannot bypass the hook policy.

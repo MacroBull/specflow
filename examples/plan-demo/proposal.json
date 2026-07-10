@@ -1,0 +1,40 @@
+{
+  "spec": "# CSV empty fields\n\n`parse_csv` must preserve empty fields, including consecutive and trailing empty fields. Quoted CSV syntax remains out of scope.\n",
+  "flow": {
+    "name": "preserve-empty-fields",
+    "initial": "red",
+    "stages": {
+      "red": {
+        "objective": "Prove the approved regression is present before implementation.",
+        "instructions": ["Inspect the evidence. Do not change production code."],
+        "tools": ["read", "shell"],
+        "shell_prefixes": ["python -m unittest"],
+        "verify": ["python", "{verifier_root}/verify.py", "red"],
+        "next": "green"
+      },
+      "green": {
+        "objective": "Make the approved behavior pass with the smallest correct change.",
+        "instructions": ["Modify only source or tests and preserve existing behavior."],
+        "tools": ["read", "write", "shell"],
+        "write_paths": ["src", "tests"],
+        "shell_prefixes": ["python -m unittest"],
+        "verify": ["python", "{verifier_root}/verify.py", "green"],
+        "next": "review"
+      },
+      "review": {
+        "objective": "Review the final diff and run all approved checks.",
+        "instructions": ["Do not modify files. Request a workflow change if verification is insufficient."],
+        "tools": ["read", "shell"],
+        "shell_prefixes": ["python -m unittest", "git diff"],
+        "verify": ["python", "{verifier_root}/verify.py", "review"],
+        "next": "completed"
+      }
+    }
+  },
+  "verifiers": [
+    {
+      "path": "verify.py",
+      "content": "from __future__ import annotations\n\nimport subprocess\nimport sys\n\nfrom src.parser import parse_csv\n\nmode = sys.argv[1]\nexpected = [\"a\", \"\", \"b\", \"\"]\nactual = parse_csv(\"a,,b,\")\n\nif mode == \"red\":\n    raise SystemExit(0 if actual != expected else 1)\n\nif actual != expected:\n    print(f\"expected {expected!r}, got {actual!r}\", file=sys.stderr)\n    raise SystemExit(1)\n\nif mode == \"review\":\n    raise SystemExit(subprocess.run([sys.executable, \"-m\", \"unittest\", \"discover\", \"-s\", \"tests\"]).returncode)\n\nraise SystemExit(0)\n"
+    }
+  ]
+}

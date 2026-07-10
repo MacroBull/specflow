@@ -1,0 +1,20 @@
+{
+  "name": "tdd-planner",
+  "objective": "Turn the human goal into an observable spec, staged flow, and executable verifiers.",
+  "instructions": [
+    "Inspect the repository and existing tests before proposing a flow.",
+    "Discuss ambiguous behavior and verifier coverage with the human.",
+    "Keep implementation out of the planning phase.",
+    "Use {verifier_root} in stage verify commands; approval resolves it to frozen files."
+  ],
+  "tools": ["read", "shell"],
+  "shell_prefixes": ["python -m unittest", "git diff", "find"],
+  "tool_schemas": {
+    "shell": {
+      "type": "object",
+      "properties": {"command": {"type": "string"}},
+      "required": ["command"],
+      "additionalProperties": false
+    }
+  }
+}
