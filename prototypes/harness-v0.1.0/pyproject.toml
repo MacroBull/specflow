@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specflow-harness"
+version = "0.1.0"
+description = "Spec-locked, verifiable agent DAG harness for Codex, Claude Code and Copilot CLI"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "SpecFlow contributors"}]
+dependencies = []
+
+[project.scripts]
+sf = "specflow.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,6 @@
+{
+  "nodes": [
+    {"id": "write", "type": "command", "argv": ["python", "-c", "from pathlib import Path; Path('output').mkdir(exist_ok=True); Path('output/hello.txt').write_text('${message}')"]},
+    {"id": "inspect", "type": "verify", "needs": ["write"], "checks": [{"type": "contains", "path": "output/hello.txt", "text": "hello specflow"}]}
+  ]
+}

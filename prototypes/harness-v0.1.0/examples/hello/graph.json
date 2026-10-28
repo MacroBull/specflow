@@ -1,0 +1,6 @@
+{
+  "nodes": [
+    {"id": "compose", "type": "flow", "file": "flows/write.json", "with": {"message": "hello specflow"}},
+    {"id": "summarize", "type": "command", "needs": ["compose"], "argv": ["python", "-c", "from pathlib import Path; Path('output/summary.txt').write_text(Path('output/hello.txt').read_text())"]}
+  ]
+}
